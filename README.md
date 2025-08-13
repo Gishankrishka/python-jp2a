@@ -47,7 +47,7 @@ jp2a image.png --html --width 80
 
 **Original image:**
 
-![Sample Image](https://via.placeholder.com/120x60.png?text=Image)
+![Sample Image]([https://via.placeholder.com/120x60.png?text=Image](https://raw.githubusercontent.com/Gishankrishka/python-jp2a/refs/heads/main/assets/ss.png))
 
 **ASCII Art Output:**
 
