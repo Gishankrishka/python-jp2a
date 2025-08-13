@@ -1,0 +1,18 @@
+[project]
+name = "jp2a"
+version = "1.0.0"
+description = "Python jp2a ASCII art converter with image and video support"
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [
+  {name = "Gishan Krishka", email = "your-email@example.com"}
+]
+license = {text = "MIT"}
+dependencies = ["Pillow>=10.0.0", "requests>=2.31.0", "opencv-python; extra == 'video'"]
+
+[project.optional-dependencies]
+video = ["opencv-python"]
+
+
+[project.urls]
+Homepage = "https://github.com/cyberline/jp2a"
