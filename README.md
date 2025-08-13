@@ -23,7 +23,7 @@
 install the latest from **GitHub**:
 
 ```bash
-pip install git+https://github.com/YourUser/python-jp2a.git
+pip install git+https://github.com/Gishankrishka/python-jp2a.git@@v1.0.0
 ```
 
 ---
