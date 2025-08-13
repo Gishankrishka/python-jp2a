@@ -34,11 +34,20 @@ pip install git+https://github.com/Gishankrishka/python-jp2a.git
 # Convert an image to ASCII
 jp2a image.png --width 100 --color
 
+or
+
+python3 -m jp2a image.png --color
+
 # Convert a video to ASCII in fullscreen high-res mode
 jp2a video.mp4 --fullscreen --highres
 
 # Get HTML output
 jp2a image.png --html --width 80
+
+or
+
+python -m jp2a image.png --html --width 80
+
 ```
 
 ---
