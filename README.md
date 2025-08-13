@@ -20,13 +20,7 @@
 
 ## Installation
 
-Install via **PyPI**:
-
-```bash
-pip install jp2a-python
-```
-
-Or install the latest from **GitHub**:
+install the latest from **GitHub**:
 
 ```bash
 pip install git+https://github.com/YourUser/python-jp2a.git
@@ -104,7 +98,7 @@ jp2a image.png --html --width 80
 You can also use it programmatically:
 
 ```python
-from jp2a.core import convert_to_ascii
+from jp2a import convert_to_ascii
 
 ascii_art = convert_to_ascii(
     "image.png",
