@@ -1,5 +1,8 @@
 # jp2a-python
 
+<img width="500" height="500" alt="atGPT Image Aug 20, 2025, 07_09_35 PM" src="https://github.com/user-attachments/assets/a9fad732-07e3-47ed-ad36-4d8cf81f476f" />
+
+
 > Python jp2a-like ASCII art converter with **image and video support**.
 > Turn any image or video into stunning ASCII directly in your terminal, with optional color, high-res blocks, and HTML output.
 
