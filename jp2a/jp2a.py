@@ -3,10 +3,12 @@ import argparse, shutil, sys, os, time
 from PIL import Image, ImageOps, ImageFilter
 import requests
 from io import BytesIO
+import subprocess
+import threading
 
 # ------------------- METADATA -------------------
 DEFAULT_CHARS = "...',;:clodxkO0KXNWM"
-VERSION = "1.3-python-jp2a"
+VERSION = "1.4.0-python-jp2a"
 COPYRIGHT = "© 2025 Gishan Krishka (https://t.me/KrishDev)"
 
 # ------------------- OPTIONAL VIDEO SUPPORT -------------------
@@ -159,6 +161,49 @@ def convert_to_ascii(
         html=html
     )
 
+# ------------------- AUDIO EXTRACTION & PLAYBACK -------------------
+def extract_audio_from_video(video_path, temp_audio_path="temp_audio.wav", speed=1.0):
+    """Extract audio from video using ffmpeg and adjust speed"""
+    try:
+        # Speed adjustment: 1.0 = normal, 0.8 = 20% slower, 0.5 = 50% slower
+        cmd = [
+            'ffmpeg', '-i', video_path, 
+            '-q:a', '9', '-n', 
+            '-af', f'atempo={speed}',  # Adjust audio tempo
+            temp_audio_path, '-loglevel', 'error'
+        ]
+        result = subprocess.run(cmd, capture_output=True, timeout=60)
+        if os.path.exists(temp_audio_path) and os.path.getsize(temp_audio_path) > 0:
+            return temp_audio_path
+        return None
+    except subprocess.TimeoutExpired:
+        print("Warning: Audio extraction timed out")
+        return None
+    except FileNotFoundError:
+        print("Warning: FFmpeg not found. Install FFmpeg to enable audio playback.")
+        return None
+    except Exception as e:
+        return None
+
+def play_audio_background(audio_path):
+    """Play audio in background thread using ffplay"""
+    def _play():
+        try:
+            if sys.platform == 'win32':
+                cmd = f'ffplay -nodisp -autoexit "{audio_path}"'
+            elif sys.platform == 'darwin':
+                cmd = f'ffplay -nodisp -autoexit "{audio_path}"'
+            else:  # Linux
+                cmd = f'ffplay -nodisp -autoexit "{audio_path}" 2>/dev/null'
+            
+            subprocess.Popen(cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except Exception as e:
+            print(f"Error playing audio: {e}")
+    
+    audio_thread = threading.Thread(target=_play, daemon=True)
+    audio_thread.start()
+    return audio_thread
+
 # ------------------- VIDEO ASCII -------------------
 def play_video_ascii(video_path, color=False, charset=DEFAULT_CHARS, invert=False,
                      highres=False, flipx=False, flipy=False, edges_only=False,
@@ -180,62 +225,102 @@ def play_video_ascii(video_path, color=False, charset=DEFAULT_CHARS, invert=Fals
         frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         print(f"Video ASCII mode: {video_path} at {fps:.2f} FPS ({frame_count} frames)")
 
-        while True:
-            ret, frame = cap.read()
-            if not ret:
-                break
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            img = Image.fromarray(frame).convert("RGBA")  # <-- FIXED for RGBA
+        # Extract and play audio in background
+        audio_thread = None
+        temp_audio = "temp_audio.wav"
+        audio_path = extract_audio_from_video(video_path, temp_audio, speed=0.8)
+        audio_started = False
+        if audio_path:
+            print(f"Starting audio playback...")
+            audio_thread = play_audio_background(audio_path)
+            audio_started = True
+            time.sleep(1.0)  # Give audio time to start
 
-            # Fullscreen or custom width/height handling
-            term_w, term_h = get_terminal_size()
-            aspect_ratio = img.height / img.width
+        try:
+            frame_num = 0
+            start_time = time.time()
+            frame_delay = 1.0 / fps
+            
+            while True:
+                ret, frame = cap.read()
+                if not ret:
+                    break
+                
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                img = Image.fromarray(frame).convert("RGBA")
 
-            # Fullscreen or custom width/height handling
-            term_w, term_h = get_terminal_size()
-            aspect_ratio = img.height / img.width
-            char_aspect = 0.55  # typical char height/width ratio
+                # Fullscreen or custom width/height handling
+                term_w, term_h = get_terminal_size()
+                aspect_ratio = img.height / img.width
+                char_aspect = 0.55
 
-            if fullscreen:
-                w = term_w
-                h = int(w * aspect_ratio * char_aspect)
-                if h > term_h:
-                    h = term_h
-                    w = int(h / (aspect_ratio * char_aspect))
-            else:
-                w = width or img.width
-                h = height or int(w * aspect_ratio * char_aspect)
-                if w > term_w:
+                if fullscreen:
                     w = term_w
                     h = int(w * aspect_ratio * char_aspect)
-                if h > term_h:
-                    h = term_h
-                    w = int(h / (aspect_ratio * char_aspect))
+                    if h > term_h:
+                        h = term_h
+                        w = int(h / (aspect_ratio * char_aspect))
+                else:
+                    w = width or img.width
+                    h = height or int(w * aspect_ratio * char_aspect)
+                    if w > term_w:
+                        w = term_w
+                        h = int(w * aspect_ratio * char_aspect)
+                    if h > term_h:
+                        h = term_h
+                        w = int(h / (aspect_ratio * char_aspect))
 
+                if highres:
+                    color = True
 
-            if highres:
-                color = True
+                ascii_frame = image_to_ascii(
+                    img,
+                    width=w,
+                    height=h,
+                    color=color,
+                    charset=charset,
+                    invert=invert,
+                    highres=highres,
+                    flipx=flipx,
+                    flipy=flipy,
+                    edges_only=edges_only,
+                    edge_threshold=edge_threshold,
+                    fill=fill,
+                    border=border
+                )
 
-            ascii_frame = image_to_ascii(
-                img,
-                width=w,
-                height=h,
-                color=color,
-                charset=charset,
-                invert=invert,
-                highres=highres,
-                flipx=flipx,
-                flipy=flipy,
-                edges_only=edges_only,
-                edge_threshold=edge_threshold,
-                fill=fill,
-                border=border
-            )
-
-            if clear:
-                os.system('cls' if os.name=='nt' else 'clear')
-            print(ascii_frame)
-            time.sleep(1.0 / fps)
+                if clear:
+                    os.system('cls' if os.name=='nt' else 'clear')
+                print(ascii_frame)
+                
+                # Sync with audio: use exact frame timing from video
+                elapsed_total = time.time() - start_time
+                target_time = frame_num * frame_delay
+                sleep_time = target_time - elapsed_total
+                
+                if sleep_time > 0.001:
+                    time.sleep(sleep_time)
+                elif sleep_time < -frame_delay:
+                    # If we're too far behind, skip a frame to catch up
+                    frame_num += 1
+                    continue
+                
+                frame_num += 1
+                
+        except KeyboardInterrupt:
+            print("\nVideo stopped by user.")
+        finally:
+            if audio_thread:
+                try:
+                    audio_thread.join(timeout=0.5)
+                except:
+                    pass
+            time.sleep(0.5)
+            if 'temp_audio' in locals() and os.path.exists(temp_audio):
+                try:
+                    os.remove(temp_audio)
+                except:
+                    pass
     except KeyboardInterrupt:
         print("\nVideo stopped by user.")
     finally:
@@ -249,7 +334,7 @@ def main():
         formatter_class=argparse.RawTextHelpFormatter,
         epilog="""Examples:
   python jp2a.py image.png --width 100 --color
-  python jp2a.py video.mp4 --fullscreen --highres  # Video ASCII
+  python jp2a.py video.mp4 --fullscreen --highres
 """
     )
 
@@ -342,4 +427,3 @@ def main():
 
 if __name__=="__main__":
     main()
-
