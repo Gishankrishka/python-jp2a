@@ -8,7 +8,7 @@ import threading
 
 # ------------------- METADATA -------------------
 DEFAULT_CHARS = "...',;:clodxkO0KXNWM"
-VERSION = "1.4.0-python-jp2a"
+VERSION = "1.3-python-jp2a"
 COPYRIGHT = "© 2025 Gishan Krishka (https://t.me/KrishDev)"
 
 # ------------------- OPTIONAL VIDEO SUPPORT -------------------
