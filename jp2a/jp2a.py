@@ -228,7 +228,7 @@ def play_video_ascii(video_path, color=False, charset=DEFAULT_CHARS, invert=Fals
         # Extract and play audio in background
         audio_thread = None
         temp_audio = "temp_audio.wav"
-        audio_path = extract_audio_from_video(video_path, temp_audio, speed=0.8)  
+        audio_path = extract_audio_from_video(video_path, temp_audio, speed=0.7)  
         # audio_path = extract_audio_from_video(video_path, temp_audio)
         audio_started = False
         if audio_path:
