@@ -209,6 +209,7 @@ def play_video_ascii(video_path, color=False, charset=DEFAULT_CHARS, invert=Fals
                      highres=False, flipx=False, flipy=False, edges_only=False,
                      edge_threshold=50.0, fill=False, border=False, clear=True,
                      fullscreen=False, width=None, height=None):
+    cap = None
     try:
         import cv2, time, os
 
@@ -225,107 +226,94 @@ def play_video_ascii(video_path, color=False, charset=DEFAULT_CHARS, invert=Fals
         frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         print(f"Video ASCII mode: {video_path} at {fps:.2f} FPS ({frame_count} frames)")
 
-        # Extract and play audio in background
         audio_thread = None
         temp_audio = "temp_audio.wav"
-        audio_path = extract_audio_from_video(video_path, temp_audio, speed=0.7)  
-        # audio_path = extract_audio_from_video(video_path, temp_audio)
+        audio_path = extract_audio_from_video(video_path, temp_audio, speed=0.7)
         audio_started = False
         if audio_path:
             print(f"Starting audio playback...")
             audio_thread = play_audio_background(audio_path)
             audio_started = True
-            time.sleep(1.0)  # Give audio time to start
+            time.sleep(1.0)
 
-        try:
-            frame_num = 0
-            start_time = time.time()
-            frame_delay = 1.0 / fps
-            
-            while True:
-                ret, frame = cap.read()
-                if not ret:
-                    break
-                
-                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                img = Image.fromarray(frame).convert("RGBA")
+        frame_num = 0
+        start_time = time.time()
+        frame_delay = 1.0 / fps
 
-                # Fullscreen or custom width/height handling
-                term_w, term_h = get_terminal_size()
-                aspect_ratio = img.height / img.width
-                char_aspect = 0.55
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
 
-                if fullscreen:
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            img = Image.fromarray(frame).convert("RGBA")
+
+            term_w, term_h = get_terminal_size()
+            aspect_ratio = img.height / img.width
+            char_aspect = 0.55
+
+            if fullscreen:
+                w = term_w
+                h = int(w * aspect_ratio * char_aspect)
+                if h > term_h:
+                    h = term_h
+                    w = int(h / (aspect_ratio * char_aspect))
+            else:
+                w = width or img.width
+                h = height or int(w * aspect_ratio * char_aspect)
+                if w > term_w:
                     w = term_w
                     h = int(w * aspect_ratio * char_aspect)
-                    if h > term_h:
-                        h = term_h
-                        w = int(h / (aspect_ratio * char_aspect))
-                else:
-                    w = width or img.width
-                    h = height or int(w * aspect_ratio * char_aspect)
-                    if w > term_w:
-                        w = term_w
-                        h = int(w * aspect_ratio * char_aspect)
-                    if h > term_h:
-                        h = term_h
-                        w = int(h / (aspect_ratio * char_aspect))
+                if h > term_h:
+                    h = term_h
+                    w = int(h / (aspect_ratio * char_aspect))
 
-                if highres:
-                    color = True
+            if highres:
+                color = True
 
-                ascii_frame = image_to_ascii(
-                    img,
-                    width=w,
-                    height=h,
-                    color=color,
-                    charset=charset,
-                    invert=invert,
-                    highres=highres,
-                    flipx=flipx,
-                    flipy=flipy,
-                    edges_only=edges_only,
-                    edge_threshold=edge_threshold,
-                    fill=fill,
-                    border=border
-                )
+            ascii_frame = image_to_ascii(
+                img,
+                width=w,
+                height=h,
+                color=color,
+                charset=charset,
+                invert=invert,
+                highres=highres,
+                flipx=flipx,
+                flipy=flipy,
+                edges_only=edges_only,
+                edge_threshold=edge_threshold,
+                fill=fill,
+                border=border
+            )
 
-                if clear:
-                    os.system('cls' if os.name=='nt' else 'clear')
-                print(ascii_frame)
-                
-                # Sync with audio: use exact frame timing from video
-                elapsed_total = time.time() - start_time
-                target_time = frame_num * frame_delay
-                sleep_time = target_time - elapsed_total
-                
-                if sleep_time > 0.001:
-                    time.sleep(sleep_time)
-                elif sleep_time < -frame_delay:
-                    # If we're too far behind, skip a frame to catch up
-                    frame_num += 1
-                    continue
-                
+            if clear:
+                os.system('cls' if os.name == 'nt' else 'clear')
+            print(ascii_frame)
+
+            elapsed_total = time.time() - start_time
+            target_time = frame_num * frame_delay
+            sleep_time = target_time - elapsed_total
+
+            if sleep_time > 0.001:
+                time.sleep(sleep_time)
+            elif sleep_time < -frame_delay:
                 frame_num += 1
-                
-        except KeyboardInterrupt:
-            print("\nVideo stopped by user.")
-        finally:
-            if audio_thread:
-                try:
-                    audio_thread.join(timeout=0.5)
-                except:
-                    pass
-            time.sleep(0.5)
-            if 'temp_audio' in locals() and os.path.exists(temp_audio):
-                try:
-                    os.remove(temp_audio)
-                except:
-                    pass
+                continue
+
+            frame_num += 1
+
     except KeyboardInterrupt:
         print("\nVideo stopped by user.")
     finally:
-        cap.release()
+        if cap is not None:
+            cap.release()
+        if 'temp_audio' in locals() and os.path.exists(temp_audio):
+            try:
+                os.remove(temp_audio)
+            except:
+                pass
+
     
 
 # ------------------- MAIN -------------------
