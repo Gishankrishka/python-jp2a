@@ -1,6 +1,6 @@
 [project]
 name = "jp2a"
-version = "1.0.0"
+version = "1.4.1"
 description = "Python jp2a ASCII art converter with image and video support"
 readme = "README.md"
 requires-python = ">=3.9"
