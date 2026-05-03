@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import argparse, shutil, sys, os, time
+import argparse, shutil, sys, os, time, re
 from PIL import Image, ImageOps, ImageFilter
 import requests
 from io import BytesIO
