@@ -313,6 +313,9 @@ MIT License © 2025 Gishan Krishka
 
 Contributions welcome! Open an issue or pull request on [GitHub](https://github.com/GishanKrishka/python-jp2a).
 
+
+## Stargazers over time
+[![Stargazers over time](https://starchart.cc/Gishankrishka/python-jp2a.svg?variant=adaptive)](https://starchart.cc/Gishankrishka/python-jp2a)
 ---
 
 ## Screenshot / Demo GIF
