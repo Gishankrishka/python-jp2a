@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import argparse, shutil, sys, os, time
+import argparse, shutil, sys, os, time, re
 from PIL import Image, ImageOps, ImageFilter
 import requests
 from io import BytesIO
@@ -104,7 +104,10 @@ def image_to_ascii(
         result.append(line)
 
     if border:
-        top_bottom = "+" + "-"*len(result[0][1:-1]) + "+"
+        pattern = r"\x1b\[[0-9;*]+m"
+        width = len(re.sub(pattern, "", result[0])) - 2
+
+        top_bottom = "+" + "-"*width + "+"
         result.insert(0, top_bottom)
         result.append(top_bottom)
 
